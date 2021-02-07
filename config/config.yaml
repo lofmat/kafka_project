@@ -1,0 +1,25 @@
+kafka_cfg:
+  topic_name: 'yyyyy',
+  kafka_bootstrap_server: 'xxx',
+  kafka_topic: 'yyy',
+  ssl_cafile: '/home/isuntcov/pet_projects/ca.pem',
+  ssl_certfile: '/home/isuntcov/pet_projects/service.cert',
+  ssl_keyfile: '/home/isuntcov/pet_projects/service.key',
+
+
+
+psql_cfg:
+  db_name: 'defaultdb',
+  table_name: '',
+  db_host: 'pg-3e9f67ee-suntsov-b9d4.aivencloud.com',
+  db_port: 21076,
+  db_user: 'avnadmin',
+  db_password: 'ygkuvra687dfo1ej',
+  ssl_mode: 'require'
+
+source:
+  # Site address http://www.xxx.com
+  source_url: 'http://xxx.com'
+  # How often will be performed checks
+  check_period: 3
+  pattern_to_check: 'some_pattern'
