@@ -75,7 +75,7 @@ class Consumer:
                     else:
                         fails += 1
             except KeyboardInterrupt:
-                db_connection.close()
+                print('Stopping Kafka consumer...')
 
 
 if __name__ == '__main__':

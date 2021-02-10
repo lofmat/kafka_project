@@ -1,6 +1,6 @@
 kafka_cfg:
   kafka_bootstrap_server: 'kafka-12ae1a10-suntsov-b9d4.aivencloud.com:21078'
-  topic_name: 'topic2x'
+  topic_name: 't1'
   ssl_cafile: '/home/isuntcov/pet_projects/kafka_project/certs/ca.pem'
   ssl_certfile: '/home/isuntcov/pet_projects/kafka_project/certs/service.cert'
   ssl_keyfile: '/home/isuntcov/pet_projects/kafka_project/certs/service.key'
