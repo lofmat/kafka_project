@@ -9,8 +9,16 @@ import re
 
 
 class Producer:
+    # # Message structure
+    # msg = {'pattern': {},
+    #        'response_time': 0,
+    #        'response_code': 0}
+
     def __init__(self, global_config):
         self.global_config = global_config
+        # self.msg = {'pattern': {},
+        #             'response_time': 0.00,
+        #             'response_code': ''}
 
     def connect_to_kafka(self):
         producer = KafkaProducer(bootstrap_servers=self.global_config['kafka_cfg']['kafka_bootstrap_server'],
@@ -25,18 +33,17 @@ class Producer:
     def get_data_from_source(self):
         url = self.global_config['source']['source_url']
         pattern = self.global_config['source']['pattern_to_check']
-        # Prepared message that will be sent to Kafka
-        msg = {'url': url, 'pattern': {pattern: False}}
+        msg = {'pattern': pattern, 'pattern_matched': 0}
         try:
             resp = requests.get(url)
             # Response time
             resp_time = resp.elapsed.total_seconds()
             msg['response_time'] = resp_time
             msg['response_code'] = resp.status_code
-            #print('Text of the page ----> ', resp.text)
             r = re.search(pattern.encode('utf-8'), resp.text.encode('utf-8'))
-            # Is there pattern patches
-            msg['pattern'][pattern] = True if len(r.group(0)) > 0 else False
+            if r:
+                # Is there pattern patches
+                msg['pattern_matched'] = 1
             return msg
         except ConnectionError:
             msg['response_code'] = 'CE'
@@ -47,9 +54,10 @@ class Producer:
 
     def send_msg_to_kafka(self, msg):
         producer = self.connect_to_kafka()
-        topic = self.global_config['kafka_cfg']['topic_name']
+        t = self.global_config['kafka_cfg']['topic_name']
+        k = bytes(self.global_config['source']['source_url'], 'utf-8')
         # Send message to Kafka topic
-        producer.send(topic, msg)
+        producer.send(topic=t, key=k, value=msg)
         producer.flush()
 
 
@@ -61,6 +69,8 @@ if __name__ == '__main__':
     i = 0
     while True:
         json_message = prod_wrapper.get_data_from_source()
+        if not json_message:
+            continue
         print(f'Current json msg -> {json_message}')
         prod_wrapper.send_msg_to_kafka(json_message)
         print(f"Time to sleep -> {params['source']['check_period']}")

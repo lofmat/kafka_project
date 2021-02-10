@@ -1,5 +1,5 @@
 kafka_cfg:
-  kafka_bootstrap_server: 'kafka-2881b6aa-suntsov-b9d4.aivencloud.com:21078'
+  kafka_bootstrap_server: 'kafka-12ae1a10-suntsov-b9d4.aivencloud.com:21078'
   topic_name: 'topic0x'
   ssl_cafile: '/home/isuntcov/pet_projects/kafka_project/certs/ca.pem'
   ssl_certfile: '/home/isuntcov/pet_projects/kafka_project/certs/service.cert'
@@ -10,10 +10,10 @@ kafka_cfg:
 psql_cfg:
   db_name: 'defaultdb'
   table_name: ''
-  db_host: 'pg-3e9f67ee-suntsov-b9d4.aivencloud.com'
+  db_host: 'pg-e1a839-suntsov-b9d4.aivencloud.com'
   db_port: 21076
   db_user: 'avnadmin'
-  db_password: 'ygkuvra687dfo1ej'
+  db_password: 'kfqds8kzb83yxw6m'
   ssl_mode: 'require'
 
 source:

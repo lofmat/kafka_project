@@ -1,31 +1,35 @@
 from psycopg2 import connect
-import os
-from src import utils
 
-config = os.path.join(os.getcwd(), '../config/config.yaml')
-# Read parameters from yaml config
-params = utils.read_yaml(config)
 
-# Establish psql connection
-psql_creds = {
-    'dbname': params['psql_cfg']['db_name'],
-    'user': params['psql_cfg']['db_user'],
-    'password': params['psql_cfg']['db_password'],
-    'host': params['psql_cfg']['db_host'],
-    'port': params['psql_cfg']['db_port'],
-    'sslmode': 'require',
-}
-psql_conn = connect(**psql_creds)
-table_name = params['psql_cfg']['table_name']
+def query_exec(row, conn):
+    cursor = conn.cursor()
+    # TODO try cath
+    cursor.execute(row)
+    print(cursor.fetchall())
+    cursor.close()
 
-cursor = psql_conn.cursor()
 
-cursor.execute('DROP TABLE IF EXISTS test_t')
-cursor.execute('CREATE TABLE IF NOT EXISTS test_t (resp_time int, error_code integer, pattern char(100), pattern_ok bool)')
-cursor.execute("INSERT INTO test_t (resp_time, error_code, pattern, pattern_ok) VALUES (10, 0, 'xxx', False)")
+class DrWriter:
+    def __init__(self, global_config):
+        self.global_config = global_config
 
-cursor.execute(f"SELECT * FROM test_t")
-print(cursor.fetchall())
+    def connect_to_db(self):
+        psql_creds = {
+            'dbname': self.global_config['psql_cfg']['db_name'],
+            'user': self.global_config['psql_cfg']['db_user'],
+            'password': self.global_config['psql_cfg']['db_password'],
+            'host': self.global_config['psql_cfg']['db_host'],
+            'port': self.global_config['psql_cfg']['db_port'],
+            'sslmode': 'require',
+        }
+        # TODO try catch
+        psql_connection = connect(**psql_creds)
+        return psql_connection
 
-cursor.close()
-psql_conn.close()
+    def convert_raw_data_to_queries(self, msg):
+        table = self.global_config['psql_cfg']['table_name']
+        columns = [k for k in msg.keys()]
+        values = [msg[c] for c in columns]
+        insert_str = f"INSERT INTO {table} ({','.join(columns)}) VALUES ({','.join(values)})"
+        print('--->', insert_str)
+        return insert_str
