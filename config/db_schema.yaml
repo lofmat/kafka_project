@@ -1,0 +1,7 @@
+table_name: 'test_table'
+schema:
+  pattern: 'footer'
+  pattern_matched: 1
+  response_time: 0.119738
+  response_code: 200
+  url: 'http://www.info.com'

@@ -1,6 +1,6 @@
 kafka_cfg:
   kafka_bootstrap_server: 'kafka-12ae1a10-suntsov-b9d4.aivencloud.com:21078'
-  topic_name: 'topic0x'
+  topic_name: 'topic2x'
   ssl_cafile: '/home/isuntcov/pet_projects/kafka_project/certs/ca.pem'
   ssl_certfile: '/home/isuntcov/pet_projects/kafka_project/certs/service.cert'
   ssl_keyfile: '/home/isuntcov/pet_projects/kafka_project/certs/service.key'
@@ -9,7 +9,7 @@ kafka_cfg:
 
 psql_cfg:
   db_name: 'defaultdb'
-  table_name: ''
+  #table_name: 'test'
   db_host: 'pg-e1a839-suntsov-b9d4.aivencloud.com'
   db_port: 21076
   db_user: 'avnadmin'
@@ -20,5 +20,5 @@ source:
   # Site address http://www.xxx.com
   source_url: 'https://habr.com'
   # How often will be performed checks
-  check_period: 3
-  pattern_to_check: 'footer-'
+  check_period: 0
+  pattern_to_check: 'footer'
