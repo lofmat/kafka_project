@@ -55,6 +55,15 @@ class Consumer:
                 return False
         return True
 
+    def get_data_from_kafka(self):
+        kafka_consumer = self.connect_to_kafka()
+        kafka_consumer.assign([TopicPartition(self.topic_name, 0)])
+        kafka_consumer.seek_to_beginning(TopicPartition(self.topic_name, 0))
+        return kafka_consumer
+
+    def store_data_to_db(self):
+
+
     def get_and_store_data_to_db(self) -> None:
         """
         Start Kafka connector and receive data from Kafka topic.
@@ -68,10 +77,8 @@ class Consumer:
         query_failed = 0
         with dbw.connect_to_db() as db_connection:
             try:
-                kafka_consumer = self.connect_to_kafka()
-                kafka_consumer.assign([TopicPartition(self.topic_name, 0)])
-                kafka_consumer.seek_to_beginning(TopicPartition(self.topic_name, 0))
-                for m in kafka_consumer:
+                kk = self.get_data_from_kafka()
+                for m in kk:
                     # If there were 5 errors, we believe that
                     # the topic receives messages in the wrong format
                     # or there is some DB related issue
