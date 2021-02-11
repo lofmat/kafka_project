@@ -1,23 +1,26 @@
+# Kafka connection configuration
 kafka_cfg:
-  kafka_bootstrap_server: 'kafka-12ae1a10-suntsov-b9d4.aivencloud.com:21078'
+  # Host:port
+  kafka_bootstrap_server: 'kafka-3ce0885c-suntsov-b9d4.aivencloud.com:21078'
   topic_name: 't1'
+  # Absolute pathes
   ssl_cafile: '/home/isuntcov/pet_projects/kafka_project/certs/ca.pem'
   ssl_certfile: '/home/isuntcov/pet_projects/kafka_project/certs/service.cert'
   ssl_keyfile: '/home/isuntcov/pet_projects/kafka_project/certs/service.key'
 
-
-
+# DB connection configuration
 psql_cfg:
   db_name: 'defaultdb'
-  db_host: 'pg-e1a839-suntsov-b9d4.aivencloud.com'
+  db_host: 'pg-391fa83f-suntsov-b9d4.aivencloud.com'
   db_port: 21076
   db_user: 'avnadmin'
-  db_password: 'kfqds8kzb83yxw6m'
+  db_password: 'nst4oh2vn27kbg4r'
   ssl_mode: 'require'
 
+# Checks related parameters
 source:
   # Site address http://www.xxx.com
   source_url: 'https://habr.com'
-  # How often will be performed checks
+  # How often will be performed checks (sec)
   check_period: 3
   pattern_to_check: 'footer-'

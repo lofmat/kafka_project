@@ -16,7 +16,7 @@ HOWTO:
 
     ```python
     cd kafka_project
-    python3.9 src/db_writer.py
+    python3.9 src/setup_db.py
     ```
 
 9. Start Kafka Consumer:

@@ -1,6 +1,5 @@
 import yaml
 
-
 # Load data from yaml file
 def read_yaml(file):
     with open(file) as stream:

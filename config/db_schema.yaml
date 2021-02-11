@@ -1,5 +1,7 @@
+# DB table name
 table_name: 'test_table'
 schema:
+  # Field name: example
   pattern: 'footer'
   pattern_matched: 1
   response_time: 0.119738

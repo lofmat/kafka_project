@@ -55,8 +55,15 @@ class Consumer:
                 return False
         return True
 
-    def store_data_to_db(self):
-        dbw = DrWriter(self.psql_cfg, self.db_schema)
+    def get_and_store_data_to_db(self) -> None:
+        """
+        Start Kafka connector and receive data from Kafka topic.
+        Then store it the messages to PostgreSQL
+        If will be reached 5 fails of message format checking or 5 fails of query execution.
+        The consumer will be stopped.
+        :return: None
+        """
+        dbw = DrWriter(self.psql_cfg, self.db_schema['table_name'])
         message_format_fails = 0
         query_failed = 0
         with dbw.connect_to_db() as db_connection:
@@ -67,6 +74,7 @@ class Consumer:
                 for m in kafka_consumer:
                     # If there were 5 errors, we believe that
                     # the topic receives messages in the wrong format
+                    # or there is some DB related issue
                     if message_format_fails == 5 or query_failed == 5:
                         logging.error(f'There are 2 possible reasons of such error:\n'
                                       f'1. {message_format_fails} format checks failed.\n'
@@ -84,18 +92,22 @@ class Consumer:
                             query_failed += 1
                     else:
                         message_format_fails += 1
+            # Catch Ctrl+C
             except KeyboardInterrupt:
-                print('Stopping Kafka consumer...')
+                logging.warning('Stopping Kafka consumer...')
 
 
 if __name__ == '__main__':
+    # Configs pathes
     config = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config/config.yaml')
     db_schema = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config/db_schema.yaml')
+    # Read configs
     schema = utils.read_yaml(db_schema)
     params = utils.read_yaml(config)
-
-    Cx = Consumer(params, schema)
-    msg = Cx.store_data_to_db()
+    # Start consumer
+    cons = Consumer(params, schema)
+    # Get data from Kafka topic and store it to DB
+    cons.get_and_store_data_to_db()
 
 
 

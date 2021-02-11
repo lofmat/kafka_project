@@ -1,6 +1,6 @@
 import json
-from kafka import KafkaProducer
-from kafka.errors import KafkaTimeoutError
+from kafka import KafkaProducer, conn
+import kafka.errors as Errors
 import logging
 import os
 import re
@@ -24,18 +24,30 @@ class Producer:
         self.pattern_to_check = global_config['source']['pattern_to_check']
         self.topic_name = global_config['kafka_cfg']['topic_name']
 
-    def connect_to_kafka(self):
+    def connect_to_kafka(self) -> KafkaProducer:
         producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server,
                                  security_protocol='SSL',
                                  ssl_check_hostname=True,
                                  ssl_cafile=self.ssl_cafile,
                                  ssl_certfile=self.ssl_certfile,
                                  ssl_keyfile=self.ssl_keyfile,
-                                 api_version=(0, 10, 0), value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-                                 retries=3)
+                                 acks='all',
+                                 api_version=(0, 10, 0), value_serializer=lambda v: json.dumps(v).encode('utf-8'))
         return producer
 
-    def get_data_from_source(self):
+    def get_data_from_source(self) -> dict:
+        """
+        Pattern_matched equal to 0 when the pattern wasn't found in page code and 1 otherwise
+        Response code equal to 0 when raised not HTTPError exception
+        Response time equal to 0 when raised some exception
+        Data format:
+        { pattern: str,
+          pattern_matched: str,
+          response_time: float,
+          response_code: int }
+
+        :return:
+        """
         url = self.source_url
         pattern = self.pattern_to_check
         msg = {'pattern': pattern, 'pattern_matched': 0}
@@ -63,17 +75,36 @@ class Producer:
             msg['response_time'] = 0.0
             return msg
 
-    def send_msg_to_kafka(self, msg):
-        producer = self.connect_to_kafka()
+    def send_msg_to_kafka(self, msg: dict) -> None:
+        """
+        Send message to Kafka.
+        Message format:
+        { pattern: str,
+          pattern_matched: str,
+          response_time: float,
+          response_code: int,
+          url: str }
+        :param msg: dict
+        :return: None
+        """
+        producer_kafka_connection = self.connect_to_kafka()
         kafka_topic = self.topic_name
         url_as_key = bytes(self.source_url, 'utf-8')
         # Send message to Kafka topic
         try:
-            producer.send(topic=kafka_topic, key=url_as_key, value=msg)
-            producer.flush()
-            producer.close(timeout=2)
-        except KafkaTimeoutError as e:
-            producer.close()
+            logging.info(f'Sending to Kafka message -> {msg}')
+            kafka_host = str(self.kafka_bootstrap_server).split(':')[0]
+            kafka_port = str(self.kafka_bootstrap_server).split(':')[1]
+            if not conn.dns_lookup(kafka_host, int(kafka_port)):
+                logging.error(f'Unable to connect to {self.kafka_bootstrap_server}.'
+                              f' Please check if Kafka server is alive')
+                sys.exit(1)
+            meta = producer_kafka_connection.send(topic=kafka_topic, key=url_as_key, value=msg)
+            print(f'meta -> {meta}')
+            # Make all messages in buffer ready to the sending
+            producer_kafka_connection.flush()
+        except Errors.BrokerNotAvailableError as e:
+            producer_kafka_connection.close()
             logging.exception(f'{e}. Please check if config contains correct Kafka connection params or topic name')
             sys.exit(1)
 
@@ -82,16 +113,16 @@ if __name__ == '__main__':
     config = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config/config.yaml')
     params = utils.read_yaml(config)
     prod = Producer(params)
-    i = 1
+    check_count = 1
     try:
         while True:
             json_message = prod.get_data_from_source()
             if not json_message:
                 continue
-            logging.info(f'Check # {i}')
-            logging.info(f" Stats for {params['source']['source_url']} -> {json_message}")
+            logging.info(f'Check # {check_count}')
             prod.send_msg_to_kafka(json_message)
             time.sleep(params['source']['check_period'])
-            i += 1
+            check_count += 1
+    # Catch Ctrl+C
     except KeyboardInterrupt:
-        print('Stopping Kafka producer...')
+        logging.warning('Stopping Kafka producer...')

@@ -10,10 +10,16 @@ cfg_params = utils.read_yaml(config_path)
 schema_cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config/db_schema.yaml')
 schema = utils.read_yaml(schema_cfg_path)
 
-d = DrWriter(cfg_params, schema['table_name'])
+d = DrWriter(cfg_params['psql_cfg'], schema['table_name'])
 
 
 def build_sql_query_from_yaml_schema(table_name: str, db_schema: dict) -> str:
+    """
+    Build CREATE TABLE query
+    :param table_name: DB table name
+    :param db_schema: table field names and their types
+    :return:
+    """
     val = []
     for field_name, field_value in db_schema.items():
         if isinstance(field_value, int):
