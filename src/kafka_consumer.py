@@ -11,7 +11,12 @@ logging.getLogger().setLevel(logging.INFO)
 
 class Consumer:
     def __init__(self, global_config, db_sch):
-        self.global_config = global_config
+        self.kafka_bootstrap_server = global_config['kafka_cfg']['kafka_bootstrap_server']
+        self.topic_name = global_config['kafka_cfg']['topic_name']
+        self.ssl_cafile = global_config['kafka_cfg']['ssl_cafile']
+        self.ssl_certfile = global_config['kafka_cfg']['ssl_certfile']
+        self.ssl_keyfile = global_config['kafka_cfg']['ssl_keyfile']
+        self.psql_cfg = global_config['psql_cfg']
         self.db_schema = db_sch
 
     def connect_to_kafka(self) -> KafkaConsumer:
@@ -19,12 +24,12 @@ class Consumer:
         Create kafka consumer instance
         :return: KafkaConsumer
         """
-        consumer = KafkaConsumer(bootstrap_servers=self.global_config['kafka_cfg']['kafka_bootstrap_server'],
+        consumer = KafkaConsumer(bootstrap_servers=self.kafka_bootstrap_server,
                                  security_protocol='SSL',
                                  ssl_check_hostname=True,
-                                 ssl_cafile=self.global_config['kafka_cfg']['ssl_cafile'],
-                                 ssl_certfile=self.global_config['kafka_cfg']['ssl_certfile'],
-                                 ssl_keyfile=self.global_config['kafka_cfg']['ssl_keyfile'],)
+                                 ssl_cafile=self.ssl_cafile,
+                                 ssl_certfile=self.ssl_certfile,
+                                 ssl_keyfile=self.ssl_keyfile,)
         return consumer
 
     def validate_schema(self, current_message) -> bool:
@@ -51,19 +56,22 @@ class Consumer:
         return True
 
     def store_data_to_db(self):
-        dbw = DrWriter(self.global_config, self.db_schema)
-        fails = 0
+        dbw = DrWriter(self.psql_cfg, self.db_schema)
+        message_format_fails = 0
+        query_failed = 0
         with dbw.connect_to_db() as db_connection:
             try:
                 kafka_consumer = self.connect_to_kafka()
-                kafka_consumer.assign([TopicPartition(self.global_config['kafka_cfg']['topic_name'], 0)])
-                kafka_consumer.seek_to_beginning(TopicPartition(self.global_config['kafka_cfg']['topic_name'], 0))
+                kafka_consumer.assign([TopicPartition(self.topic_name, 0)])
+                kafka_consumer.seek_to_beginning(TopicPartition(self.topic_name, 0))
                 for m in kafka_consumer:
                     # If there were 5 errors, we believe that
                     # the topic receives messages in the wrong format
-                    if fails == 5:
-                        logging.error(f'{fails} format checks failed.\n'
-                                      f'Please check db schema config that uses producer or topic name')
+                    if message_format_fails == 5 or query_failed == 5:
+                        logging.error(f'There are 2 possible reasons of such error:\n'
+                                      f'1. {message_format_fails} format checks failed.\n'
+                                      f'Please check db schema config that uses producer or topic name\n'
+                                      f'2. {query_failed} query failed. Please check the consumer logs.')
                         db_connection.close()
                         sys.exit(1)
                     current_message_dict = json.loads(m.value.decode("utf-8"))
@@ -71,9 +79,11 @@ class Consumer:
                     logging.info(f'Received message -> {current_message_dict}')
                     if self.validate_schema(current_message_dict):
                         insert_q = dbw.convert_raw_data_to_queries(current_message_dict)
-                        query_exec(insert_q, db_connection)
+                        res = query_exec(insert_q, db_connection)
+                        if not res:
+                            query_failed += 1
                     else:
-                        fails += 1
+                        message_format_fails += 1
             except KeyboardInterrupt:
                 print('Stopping Kafka consumer...')
 

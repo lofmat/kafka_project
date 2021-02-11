@@ -1,5 +1,4 @@
 import yaml
-import logging
 
 
 # Load data from yaml file
