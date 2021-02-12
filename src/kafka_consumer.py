@@ -1,6 +1,6 @@
 from kafka import KafkaConsumer, TopicPartition
 import os
-import utils
+from utils import read_yaml
 import json
 from db_writer import DrWriter, query_exec
 import logging
@@ -109,8 +109,8 @@ if __name__ == '__main__':
     config = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config/config.yaml')
     db_schema = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config/db_schema.yaml')
     # Read configs
-    schema = utils.read_yaml(db_schema)
-    params = utils.read_yaml(config)
+    schema = read_yaml(db_schema)
+    params = read_yaml(config)
     # Start consumer
     cons = Consumer(params, schema)
     # Get data from Kafka topic and store it to DB

@@ -1,6 +1,10 @@
-# kafka_project
+# Kafka project
+Note: All steps bellow tested on the following configuration:
+ - OS: Ubuntu 18
+ - python3.9
+ - pytest-6.2.2
 
-HOWTO:
+## How to start consumer and producer
 1. Start Aiven Kafka ver. 2.7 and Aiven PostgreSQL ver. 12 
 2. Add topic with default configuration and pass it to *config/config.yaml*
 3. Download ca.pem, service.cert, service.key and copy it to *kafka_project/certs* directory
@@ -31,4 +35,18 @@ HOWTO:
     ```python
     cd kafka_project
     python3.9 src/kafka_consumer.py
+    ```
+
+## How to run tests
+1. Navigate to project directory
+    ```python
+    cd kafka_project
+    ```
+2. Add source directory to PYTHONPATH
+    ```python
+    export PYTHONPATH=$(pwd)/src
+    ```
+3. Run tests
+    ```python
+    pytest -v tests
     ```

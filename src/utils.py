@@ -1,4 +1,6 @@
 import yaml
+import os
+
 
 # Load data from yaml file
 def read_yaml(file):
@@ -7,3 +9,11 @@ def read_yaml(file):
     return yaml_data
 
 
+# Load data from yaml file
+def get_yaml_configs():
+    config = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config/config.yaml')
+    db_schema = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config/db_schema.yaml')
+    # Read configs
+    schema = read_yaml(db_schema)
+    params = read_yaml(config)
+    return schema, params

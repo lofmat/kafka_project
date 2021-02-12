@@ -2,7 +2,7 @@
 kafka_cfg:
   # Host:port
   kafka_bootstrap_server: 'kafka-3ce0885c-suntsov-b9d4.aivencloud.com:21078'
-  topic_name: 't1'
+  topic_name: 'new'
   # Absolute pathes
   ssl_cafile: '/home/isuntcov/pet_projects/kafka_project/certs/ca.pem'
   ssl_certfile: '/home/isuntcov/pet_projects/kafka_project/certs/service.cert'

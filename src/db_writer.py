@@ -34,7 +34,7 @@ class DrWriter:
         self.ssl_mode = db_config['ssl_mode']
         self.table = table_name
 
-    def connect_to_db(self) -> None:
+    def connect_to_db(self):
         psql_creds = {
             'dbname': self.db_name,
             'user': self.db_user,
@@ -49,7 +49,6 @@ class DrWriter:
         except DatabaseError:
             logging.exception(f"Connection to DB can't be established. Stopping consumer...")
             sys.exit(1)
-
 
     def convert_raw_data_to_queries(self, msg: dict) -> str:
         """

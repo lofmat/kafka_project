@@ -133,3 +133,6 @@ dmypy.json
 
 # Certificates
 certs/*
+
+# Tests
+tests/.pytest_cache

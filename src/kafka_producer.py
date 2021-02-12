@@ -1,14 +1,14 @@
 import json
-from kafka import KafkaProducer, conn, KafkaClient
+from kafka import KafkaProducer, conn
 import kafka.errors as Errors
 import logging
 import os
 import re
 import requests
-from requests.exceptions import HTTPError, ConnectionError, RequestException
+from requests.exceptions import HTTPError, ConnectionError
 import sys
 import time
-import utils
+from utils import read_yaml
 
 
 logging.getLogger().setLevel(logging.INFO)
@@ -66,11 +66,7 @@ class Producer:
             msg['response_code'] = 0
             msg['response_time'] = 0.0
             return msg
-        except HTTPError as he:
-            msg['response_code'] = he.response.status_code
-            msg['response_time'] = 0.0
-            return msg
-        except RequestException:
+        except HTTPError:
             msg['response_code'] = 1
             msg['response_time'] = 0.0
             return msg
@@ -100,7 +96,6 @@ class Producer:
                               f' Please check if Kafka server is alive')
                 sys.exit(1)
             meta = producer_kafka_connection.send(topic=kafka_topic, key=url_as_key, value=msg)
-            print(f'meta -> {meta}')
             # Make all messages in buffer ready to the sending
             producer_kafka_connection.flush()
         except Errors.BrokerNotAvailableError as e:
@@ -111,7 +106,7 @@ class Producer:
 
 if __name__ == '__main__':
     config = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config/config.yaml')
-    params = utils.read_yaml(config)
+    params = read_yaml(config)
     prod = Producer(params)
     check_count = 1
     try:
