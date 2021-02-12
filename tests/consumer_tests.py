@@ -9,7 +9,6 @@ db_schema = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config/
 # Read configs
 schema = utils.read_yaml(db_schema)
 params = utils.read_yaml(config)
-#cons = Consumer(params, schema)
 
 
 @pytest.fixture(scope='function')
@@ -17,7 +16,7 @@ def consumer():
     # Code that will run before your test, for example:
     cons = Consumer(params, schema)
     # A test function will be run at this point
-    yield
+    yield cons
     del cons
 
 
@@ -55,4 +54,16 @@ def test_schema_validation_incorrect_msg_field_name(consumer):
         'response_code': 200,
     }
     assert not consumer.validate_schema(msg)
+
+
+def test_store_msg_to_db(consumer):
+    msg = {
+        'url': 'http://www.site.com',
+        'pattern': 'somepattern',
+        'pattern_matched': 0,
+        'response_time': 0.119738,
+        'response_code': 200,
+    }
+    is_ok = consumer.store_data_to_db(msg)[0]
+    assert is_ok
 

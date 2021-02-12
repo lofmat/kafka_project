@@ -38,19 +38,8 @@ if schema.get('table_name') and schema.get('schema'):
     query = build_sql_query_from_yaml_schema(schema.get('table_name'), schema.get('schema'))
 
     with d.connect_to_db() as db_connection:
-        query_exec(query, db_connection)
+        r = query_exec(query, db_connection)
+        if not r[0]:
+            logging.error(f"Unable to create table {schema.get('table_name')}. Please check DB connection.")
 else:
     logging.error(f"Could not find 'table_name' or 'schema' in config file {schema_cfg_path}")
-
-# # Build create table query
-# for k in schema['schema'].keys():
-#     if isinstance(schema['schema'][k], int):
-#         val.append(f"{k} int")
-#     elif isinstance(schema['schema'][k], float):
-#         val.append(f"{k} float")
-#     elif isinstance(schema['schema'][k], str):
-#         val.append(f"{k} varchar(255)")
-#
-# with d.connect_to_db() as db_connection:
-#     q = f"CREATE TABLE {schema['table_name']} ({','.join(val)});"
-#     query_exec(q, db_connection)

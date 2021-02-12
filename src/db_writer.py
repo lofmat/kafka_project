@@ -1,22 +1,27 @@
-from psycopg2 import connect, DatabaseError, OperationalError
+from psycopg2 import connect, DatabaseError, OperationalError, ProgrammingError
 import logging
 import sys
 
 logging.getLogger().setLevel(logging.INFO)
 
 
-def query_exec(query: str, conn) -> bool:
+def query_exec(query: str, conn) -> list:
     query_ok = False
     with conn.cursor() as cursor:
         logging.info(f'Executing query: {query}')
         try:
             cursor.execute(query)
+            try:
+                cursor.fetchone()
+                query_res = cursor.fetchone()
+            except ProgrammingError:
+                query_res = ''
             conn.commit()
             query_ok = True
-        except OperationalError as e:
+        except OperationalError:
             logging.exception(f'Query {query} cannot be executed!')
             conn.rollback()
-    return query_ok
+    return [query_ok, query_res]
 
 
 class DrWriter:

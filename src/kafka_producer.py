@@ -1,5 +1,5 @@
 import json
-from kafka import KafkaProducer, conn
+from kafka import KafkaProducer, conn, KafkaClient
 import kafka.errors as Errors
 import logging
 import os

@@ -55,14 +55,18 @@ class Consumer:
                 return False
         return True
 
-    def get_data_from_kafka(self):
+    def get_data_from_kafka(self) -> KafkaConsumer:
         kafka_consumer = self.connect_to_kafka()
         kafka_consumer.assign([TopicPartition(self.topic_name, 0)])
         kafka_consumer.seek_to_beginning(TopicPartition(self.topic_name, 0))
         return kafka_consumer
 
-    def store_data_to_db(self):
-
+    def store_data_to_db(self, msg: dict) -> list:
+        dbw = DrWriter(self.psql_cfg, self.db_schema['table_name'])
+        with dbw.connect_to_db() as db_connection:
+            insert_q = dbw.convert_raw_data_to_queries(msg)
+            res = query_exec(insert_q, db_connection)
+        return res
 
     def get_and_store_data_to_db(self) -> None:
         """
@@ -72,36 +76,32 @@ class Consumer:
         The consumer will be stopped.
         :return: None
         """
-        dbw = DrWriter(self.psql_cfg, self.db_schema['table_name'])
         message_format_fails = 0
         query_failed = 0
-        with dbw.connect_to_db() as db_connection:
-            try:
-                kk = self.get_data_from_kafka()
-                for m in kk:
-                    # If there were 5 errors, we believe that
-                    # the topic receives messages in the wrong format
-                    # or there is some DB related issue
-                    if message_format_fails == 5 or query_failed == 5:
-                        logging.error(f'There are 2 possible reasons of such error:\n'
-                                      f'1. {message_format_fails} format checks failed.\n'
-                                      f'Please check db schema config that uses producer or topic name\n'
-                                      f'2. {query_failed} query failed. Please check the consumer logs.')
-                        db_connection.close()
-                        sys.exit(1)
-                    current_message_dict = json.loads(m.value.decode("utf-8"))
-                    current_message_dict['url'] = m.key.decode("utf-8")
-                    logging.info(f'Received message -> {current_message_dict}')
-                    if self.validate_schema(current_message_dict):
-                        insert_q = dbw.convert_raw_data_to_queries(current_message_dict)
-                        res = query_exec(insert_q, db_connection)
-                        if not res:
-                            query_failed += 1
-                    else:
-                        message_format_fails += 1
-            # Catch Ctrl+C
-            except KeyboardInterrupt:
-                logging.warning('Stopping Kafka consumer...')
+        try:
+            kk = self.get_data_from_kafka()
+            for m in kk:
+                # If there were 5 errors, we believe that
+                # the topic receives messages in the wrong format
+                # or there is some DB related issue
+                if message_format_fails == 5 or query_failed == 5:
+                    logging.error(f'There are 2 possible reasons of such error:\n'
+                                  f'1. {message_format_fails} format checks failed.\n'
+                                  f'Please check db schema config that uses producer or topic name\n'
+                                  f'2. {query_failed} query failed. Please check the consumer logs.')
+                    sys.exit(1)
+                current_message_dict = json.loads(m.value.decode("utf-8"))
+                current_message_dict['url'] = m.key.decode("utf-8")
+                logging.info(f'Received message -> {current_message_dict}')
+                if self.validate_schema(current_message_dict):
+                    res = self.store_data_to_db(current_message_dict)
+                    if not res[0]:
+                        query_failed += 1
+                else:
+                    message_format_fails += 1
+        # Catch Ctrl+C
+        except KeyboardInterrupt:
+            logging.warning('Stopping Kafka consumer...')
 
 
 if __name__ == '__main__':
